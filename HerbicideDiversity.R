@@ -11,8 +11,8 @@ alldat$AcreTrts<-alldat$Total/alldat$AppRate # Calculate acre-treatments
 head(alldat)
 
 alldat2 <- alldat %>% # add up acre-treatments for each year*crop combination
-    group_by(Year, Commodity) %>% 
-    mutate(TotalCropAcreTrts = sum(AcreTrts, na.rm=TRUE)) 
+    group_by(Year, Commodity) %>%
+    mutate(TotalCropAcreTrts = sum(AcreTrts, na.rm=TRUE))
 alldat3 <- alldat2 %>% # add up acre-treatments by mode of action
     group_by(Year, Commodity, MOA) %>%
     summarize(MOA.AcreTrts = sum(AcreTrts, na.rm=TRUE),
@@ -25,13 +25,13 @@ herbdiv <- alldat3 %>% # calculate Shannon diversity index (H) and evenness (E)
     group_by(Year, Commodity) %>%
     summarize(H = -sum(P * log(P), na.rm=TRUE),
               E = H / log(length(unique(MOA))))
-herbdiv              
+herbdiv
 tail(herbdiv)
 
 bycrop<-split(herbdiv, herbdiv$Commodity)
 bycrop$CORN
 
-png("Fig3_Evenness.png", height=4.5, width=8, units="in", res=300, pointsize=15) 
+png("Fig3_Evenness.png", height=4.5, width=8, units="in", res=300, pointsize=15)
 par(mar=c(3.2,3.2,0.5,0.5), mgp=c(2,0.7,0))
 plot(E ~ Year, data=bycrop$CORN, ylim=c(0,1), type="b", bty="n",
      xlim=c(1990, 2015), ylab="Evenness", lwd=2)
@@ -43,7 +43,7 @@ legend("bottomright", c("Corn","Soybean","Sping wheat","Winter wheat"),
 dev.off()
 
 
-png("Fig4_Diversity.png", height=4.5, width=8, units="in", res=300, pointsize=15) 
+png("Fig4_Diversity.png", height=4.5, width=8, units="in", res=300, pointsize=15)
 par(mar=c(3.2,3.2,0.5,0.5), mgp=c(2,0.7,0))
 plot(H ~ Year, data=bycrop$CORN, ylim=c(0.5,2.5), type="b", bty="n",
      xlim=c(1990, 2015), ylab="Shannon diveristy index", lwd=2)
@@ -66,7 +66,7 @@ plot(H ~ Year, data=bycrop$CORN, ylim=c(0.5,2.5), type="b", bty="n",
    legend("bottomright", c("Corn","Soybean","Sping wheat","Winter wheat"),
        pch=1:4, col=1:4, lty=1, bty="n")
 plot(E ~ Year, data=bycrop$CORN, ylim=c(0,1), type="b", bty="n",
-     xlim=c(1990, 2015), ylab="Evenness", lwd=2, xlab="")
+     xlim=c(1990, 2015), ylab="Shannon's equitability", lwd=2, xlab="")
    points(E ~ Year, data=bycrop$SOYBEANS, type="b", pch=2, col=2, lwd=2)
    points(E ~ Year, data=bycrop[[3]], type="b", pch=3, col=3, lwd=2)
    points(E ~ Year, data=bycrop[[4]], type="b", pch=4, col=4,  lwd=2)
@@ -259,7 +259,7 @@ plotwheatw.2<-ggplot(wheatw.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA
                                "22 (PSI)","26 (Lipid)","27 (HPPD)")) +
         theme_classic() + theme(legend.position="right") +
     ggtitle("Winter wheat")
-    
+
 prop4<-plot_grid(plotcorn.1, plotsoybean.1, plotwheats.1, plotwheatw.1,
          align="hv")
 save_plot("Proportion4Crop.png", prop4,
