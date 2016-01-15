@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(cowplot)
 
 read.csv("HerbicideUseData.csv")->alldat # Read in data file
 alldat$Value<-as.numeric(as.character(alldat$Value)) # make sure data recognized as data
@@ -53,6 +54,32 @@ legend("bottomright", c("Corn","Soybean","Sping wheat","Winter wheat"),
        pch=1:4, col=1:4, lty=1, bty="n")
 dev.off()
 
+png("Fig5_DiversityEvenness2panel.png", height=8, width=8, units="in",
+    res=600, pointsize=15)
+par(mar=c(1.2,3.2,0.25,0.25), mgp=c(2,0.7,0), mfrow=c(2,1),
+    oma=c(2,0,0,0))
+plot(H ~ Year, data=bycrop$CORN, ylim=c(0.5,2.5), type="b", bty="n",
+     xlim=c(1990, 2015), ylab="Shannon diveristy index", lwd=2, xlab="")
+   points(H ~ Year, data=bycrop$SOYBEANS, type="b", pch=2, col=2, lwd=2)
+   points(H ~ Year, data=bycrop[[3]], type="b", pch=3, col=3, lwd=2)
+   points(H ~ Year, data=bycrop[[4]], type="b", pch=4, col=4, lwd=2)
+   legend("bottomright", c("Corn","Soybean","Sping wheat","Winter wheat"),
+       pch=1:4, col=1:4, lty=1, bty="n")
+plot(E ~ Year, data=bycrop$CORN, ylim=c(0,1), type="b", bty="n",
+     xlim=c(1990, 2015), ylab="Evenness", lwd=2, xlab="")
+   points(E ~ Year, data=bycrop$SOYBEANS, type="b", pch=2, col=2, lwd=2)
+   points(E ~ Year, data=bycrop[[3]], type="b", pch=3, col=3, lwd=2)
+   points(E ~ Year, data=bycrop[[4]], type="b", pch=4, col=4,  lwd=2)
+   legend("bottomright", c("Corn","Soybean","Sping wheat","Winter wheat"),
+       pch=1:4, col=1:4, lty=1, bty="n")
+mtext("Year", 1, .7, outer=TRUE, at=0.545)
+dev.off()
+
+summary(lm(H ~ Year, data=bycrop$CORN))
+summary(lm(H ~ Year, data=bycrop$SOYBEAN))
+summary(lm(H ~ Year, data=bycrop[[3]]))
+summary(lm(H ~ Year, data=bycrop[[4]]))
+
 summary(lm(E ~ Year, data=bycrop$CORN))
 summary(lm(E ~ Year, data=bycrop$SOYBEAN))
 summary(lm(E ~ Year, data=bycrop[[3]]))
@@ -65,7 +92,6 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#67a61e", "#e6ab2f", "#a6761f", "#666666")
 ### Create acre-treatment percentage column
 alldat3$AcreTrtPct <- alldat3$MOA.AcreTrts/alldat3$TotalCropAcreTrts
-
 ### CORN
 data.frame(subset(alldat3, alldat3$Commodity=="CORN"))->corn.dat
 corn.full <- corn.dat %>%
@@ -85,32 +111,30 @@ plotcorn.1<-ggplot(corn.full, aes(x=Year, y=AcreTrtPct, group=as.factor(MOA),
     ylab("Proportion of total acre treatments") +
     scale_fill_manual(values=cbPalette,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "8 (Lipid)","9 (EPSPS)","10 (GlutSynth)","13 (DOXP)",
                                "14 (PPO)","15 (VLCFA)","19 (IAAtr)",
                                "22 (PSI)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Corn")
 plotcorn.2<-ggplot(corn.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA),
                      fill=as.factor(MOA), order=-as.numeric(MOA))) +
     geom_area(position='stack', na.rm=TRUE) +
     ylab("Herbicide treatments per acre") +
     scale_fill_manual(values=cbPalette,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "8 (Lipid)","9 (EPSPS)","10 (GlutSynth)","13 (DOXP)",
                                "14 (PPO)","15 (VLCFA)","19 (IAAtr)",
                                "22 (PSI)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
-plotcorn.1
-ggsave("Fig1_CornProportionMOA.png", width=8, height=4.5, units="in")
-plotcorn.2
-ggsave("Fig2_CornAcreTrtMOA.png", width=8, height=4.5, units="in")
-    
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Corn")
 ### SOYBEAN
+cbPalette2 <-cbPalette[c(1:7,9:13,15)]
 data.frame(subset(alldat3, alldat3$Commodity=="SOYBEANS"))->soybean.dat
 soybean.full <- soybean.dat %>%
     complete(Year, MOA,
@@ -127,86 +151,32 @@ plotsoybean.1<-ggplot(soybean.full, aes(x=Year, y=AcreTrtPct, group=as.factor(MO
                      fill=as.factor(MOA), order=-as.numeric(MOA))) +
     geom_area(position='stack', na.rm=TRUE) +
     ylab("Proportion of total acre treatments") +
-    scale_fill_manual(values=cbPalette,
+    scale_fill_manual(values=cbPalette2,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "9 (EPSPS)","10 (GlutSynth)","13 (DOXP)",
                                "14 (PPO)","15 (VLCFA)",
                                "22 (PSI)")) +
-        theme_bw() + theme(legend.position="right")
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Soybean")
 plotsoybean.2<-ggplot(soybean.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA),
                      fill=as.factor(MOA), order=-as.numeric(MOA))) +
     geom_area(position='stack', na.rm=TRUE) +
     ylab("Herbicide treatments per acre") +
-    scale_fill_manual(values=cbPalette,
+    scale_fill_manual(values=cbPalette2,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "9 (EPSPS)","10 (GlutSynth)","13 (DOXP)",
                                "14 (PPO)","15 (VLCFA)",
                                "22 (PSI)")) +
-        theme_bw() + theme(legend.position="right")
-plotsoybean.1
-ggsave("Fig1_SoybeanProportionMOA.png", width=8, height=4.5, units="in")
-plotsoybean.2
-ggsave("Fig2_SoybeanAcreTrtMOA.png", width=8, height=4.5, units="in")
-    
-### WINTER WHEAT
-cbPalette <- c("#999999", "#E69F00", "#009E73", "#56B4E9", 
-               "#F0E442", "#0072B2", "#D55E00", "#CC79A7",
-               "#4d9f78", "#D8D8D8", "#746fb3", "#e9488a",
-               "#67a61e", "#e6ab2f", "#a6761f", "#666666")
-data.frame(subset(alldat3, alldat3$Commodity=="WHEAT, WINTER"))->wheatw.dat
-wheatw.full <- wheatw.dat %>%
-    complete(Year, MOA,
-             fill=list(Commodity="WHEAT, WINTER",MOA.AcreTrts=0,
-                       TotalCropAcreTrts=NA, AcreTrtPct=0))
-wheatw.acres <- read.csv("SurveyedWinterWheatAcres.csv") %>%
-    group_by(Year) %>%
-    summarize(Surveyed.Acres = sum(Value))
-length(wheatw.full$Year) / length(unique(wheatw.full$Year))->wheatw.Nyrs
-wheatw.full$Acres <- rep(wheatw.acres$Surveyed.Acres, each=wheatw.Nyrs)
-wheatw.full$MOA.peracre <- wheatw.full$MOA.AcreTrts / wheatw.full$Acres
-wheatw.full$MOAr <- factor(wheatw.full$MOA, levels=rev(unique(wheatw.full$MOA)))
-plotwheatw.1<-ggplot(wheatw.full, aes(x=Year, y=AcreTrtPct, group=as.factor(MOA),
-                     fill=as.factor(MOA), order=-as.numeric(MOA))) +
-    geom_area(position='stack', na.rm=TRUE) +
-    ylab("Proportion of total acre treatments") +
-    scale_fill_manual(values=cbPalette,
-                      name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
-                      labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
-                               "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
-                               "8 (Lipid)","9 (EPSPS)",
-                               "14 (PPO)","15 (VLCFA)",
-                               "22 (PSI)","26 (Lipid)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
-plotwheatw.2<-ggplot(wheatw.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA),
-                     fill=as.factor(MOA), order=-as.numeric(MOA))) +
-    geom_area(position='stack', na.rm=TRUE) +
-    ylab("Herbicide treatments per acre") +
-    scale_fill_manual(values=cbPalette,
-                      name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
-                      labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
-                               "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
-                               "8 (Lipid)","9 (EPSPS)",
-                               "14 (PPO)","15 (VLCFA)",
-                               "22 (PSI)","26 (Lipid)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
-plotwheatw.1
-ggsave("Fig1_WheatwProportionMOA.png", width=8, height=4.5, units="in")
-plotwheatw.2
-ggsave("Fig2_WheatwAcreTrtMOA.png", width=8, height=4.5, units="in")
-    
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Soybean")
 ### SPRING WHEAT
-cbPalette <- c("#999999", "#E69F00", "#009E73", "#56B4E9", 
-               "#F0E442", "#0072B2", "#D55E00", "#CC79A7",
-               "#4d9f78", "#D8D8D8", "#746fb3", "#e9488a",
-               "#67a61e", "#e6ab2f", "#a6761f", "#666666")
+cbPalette3<-cbPalette[c(1:9,12:14,16)]
 data.frame(subset(alldat3, alldat3$Commodity=="WHEAT, SPRING"))->wheats.dat
 wheats.full <- wheats.dat %>%
     complete(Year, MOA,
@@ -223,30 +193,96 @@ plotwheats.1<-ggplot(wheats.full, aes(x=Year, y=AcreTrtPct, group=as.factor(MOA)
                      fill=as.factor(MOA), order=-as.numeric(MOA))) +
     geom_area(position='stack', na.rm=TRUE) +
     ylab("Proportion of total acre treatments") +
-    scale_fill_manual(values=cbPalette,
+    scale_fill_manual(values=cbPalette3,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "8 (Lipid)","9 (EPSPS)",
                                "14 (PPO)","15 (VLCFA)",
                                "26 (Lipid)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Spring wheat")
 plotwheats.2<-ggplot(wheats.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA),
                      fill=as.factor(MOA), order=-as.numeric(MOA))) +
     geom_area(position='stack', na.rm=TRUE) +
     ylab("Herbicide treatments per acre") +
-    scale_fill_manual(values=cbPalette,
+    scale_fill_manual(values=cbPalette3,
                       name="WSSA Group",
-                      guide=guide_legend(ncol=1, reverse=TRUE),
+                      guide=guide_legend(ncol=1, reverse=FALSE),
                       labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
                                "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
                                "8 (Lipid)","9 (EPSPS)",
                                "14 (PPO)","15 (VLCFA)",
                                "26 (Lipid)","27 (HPPD)")) +
-        theme_bw() + theme(legend.position="right")
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Spring wheat")
+### WINTER WHEAT
+cbPalette4<-cbPalette[c(1:9,12:13,15,14,16)]
+data.frame(subset(alldat3, alldat3$Commodity=="WHEAT, WINTER"))->wheatw.dat
+wheatw.full <- wheatw.dat %>%
+    complete(Year, MOA,
+             fill=list(Commodity="WHEAT, WINTER",MOA.AcreTrts=0,
+                       TotalCropAcreTrts=NA, AcreTrtPct=0))
+wheatw.acres <- read.csv("SurveyedWinterWheatAcres.csv") %>%
+    group_by(Year) %>%
+    summarize(Surveyed.Acres = sum(Value))
+length(wheatw.full$Year) / length(unique(wheatw.full$Year))->wheatw.Nyrs
+wheatw.full$Acres <- rep(wheatw.acres$Surveyed.Acres, each=wheatw.Nyrs)
+wheatw.full$MOA.peracre <- wheatw.full$MOA.AcreTrts / wheatw.full$Acres
+wheatw.full$MOAr <- factor(wheatw.full$MOA, levels=rev(unique(wheatw.full$MOA)))
+plotwheatw.1<-ggplot(wheatw.full, aes(x=Year, y=AcreTrtPct, group=as.factor(MOA),
+                     fill=as.factor(MOA), order=-as.numeric(MOA))) +
+    geom_area(position='stack', na.rm=TRUE) +
+    ylab("Proportion of total acre treatments") +
+    scale_fill_manual(values=cbPalette4,
+                      name="WSSA Group",
+                      guide=guide_legend(ncol=1, reverse=FALSE),
+                      labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
+                               "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
+                               "8 (Lipid)","9 (EPSPS)",
+                               "14 (PPO)","15 (VLCFA)",
+                               "22 (PSI)","26 (Lipid)","27 (HPPD)")) +
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Winter wheat")
+plotwheatw.2<-ggplot(wheatw.full, aes(x=Year, y=MOA.peracre, group=as.factor(MOA),
+                     fill=as.factor(MOA), order=-as.numeric(MOA))) +
+    geom_area(position='stack', na.rm=TRUE) +
+    ylab("Herbicide treatments per acre") +
+    scale_fill_manual(values=cbPalette4,
+                      name="WSSA Group",
+                      guide=guide_legend(ncol=1, reverse=FALSE),
+                      labels=c("1 (ACCase)","2 (ALS)","3 (Mitosis)",
+                               "4 (Auxin)","5 (PSII)","6 (PSII)","7 (PSII)",
+                               "8 (Lipid)","9 (EPSPS)",
+                               "14 (PPO)","15 (VLCFA)",
+                               "22 (PSI)","26 (Lipid)","27 (HPPD)")) +
+        theme_classic() + theme(legend.position="right") +
+    ggtitle("Winter wheat")
+    
+prop4<-plot_grid(plotcorn.1, plotsoybean.1, plotwheats.1, plotwheatw.1,
+         align="hv")
+save_plot("Proportion4Crop.png", prop4,
+          ncol=2, nrow=2, base_height=5, base_width=7)
+
+acretrt4<-plot_grid(plotcorn.2, plotsoybean.2, plotwheats.2, plotwheatw.2,
+         align="hv")
+save_plot("AcreTrt4Crop.png", acretrt4,
+          ncol=2, nrow=2, base_height=5, base_width=7)
+
+plotcorn.1
+ggsave("Fig1_CornProportionMOA.png", width=8, height=4.5, units="in")
+plotcorn.2
+ggsave("Fig2_CornAcreTrtMOA.png", width=8, height=4.5, units="in")
+plotsoybean.1
+ggsave("Fig1_SoybeanProportionMOA.png", width=8, height=4.5, units="in")
+plotsoybean.2
+ggsave("Fig2_SoybeanAcreTrtMOA.png", width=8, height=4.5, units="in")
+plotwheatw.1
+ggsave("Fig1_WheatwProportionMOA.png", width=8, height=4.5, units="in")
+plotwheatw.2
+ggsave("Fig2_WheatwAcreTrtMOA.png", width=8, height=4.5, units="in")
 plotwheats.1
 ggsave("Fig1_WheatsProportionMOA.png", width=8, height=4.5, units="in")
 plotwheats.2
 ggsave("Fig2_WheatsAcreTrtMOA.png", width=8, height=4.5, units="in")
-    
